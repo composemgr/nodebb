@@ -1,0 +1,54 @@
+# nginx proxy address - http://172.17.0.1:8086
+
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "5m"
+    max-file: "1"
+
+services:
+  nodebb:
+    image: nodebb/nodebb:latest
+    container_name: nodebb-app
+    restart: unless-stopped
+    logging: *default-logging
+    networks:
+      - nodebb
+    ports:
+      - "8086:4567"
+    environment:
+      TZ: ${TZ:-America/New_York}
+    volumes:
+      - ./rootfs/data/nodebb:/data
+      - ./rootfs/config/nodebb:/config
+    depends_on:
+      - nodebb-db
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4567"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  nodebb-db:
+    image: mongo:7
+    container_name: nodebb-db
+    restart: unless-stopped
+    logging: *default-logging
+    networks:
+      - nodebb
+    environment:
+      TZ: ${TZ:-America/New_York}
+      MONGO_INITDB_DATABASE: ${DB_CREATE_DATABASE_NAME:-nodebb}
+      MONGO_INITDB_ROOT_USERNAME: ${DB_ADMIN_NAME:-root}
+      MONGO_INITDB_ROOT_PASSWORD: ${DB_ADMIN_PASS:-changeme_root_password}
+    volumes:
+      - ./rootfs/db/mongodb/nodebb:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  nodebb:
+    external: false
