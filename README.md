@@ -50,9 +50,9 @@ See `docker-compose.yaml` for complete list of configurable options.
 
 ## 📂 Volumes
 
-- `./rootfs/data/nodebb` - Data storage
-- `./rootfs/config/nodebb` - Data storage
-- `./rootfs/data/db/mongodb/nodebb` - Data storage
+- `./volumes/data/nodebb` - Data storage
+- `./volumes/config/nodebb` - Data storage
+- `./volumes/data/db/mongodb/nodebb` - Data storage
 
 ## 🔐 Security
 
