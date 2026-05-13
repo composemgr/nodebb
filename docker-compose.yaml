@@ -1,5 +1,6 @@
 # nginx proxy address - http://172.17.0.1:8086
 
+name: nodebb
 x-logging: &default-logging
   driver: json-file
   options:
@@ -7,40 +8,46 @@ x-logging: &default-logging
     max-file: "1"
 
 services:
-  nodebb:
+  app:
     image: nodebb/nodebb:latest
+    pull_policy: always
     container_name: nodebb-app
-    restart: unless-stopped
+    hostname: ${BASE_HOST_NAME:-$HOSTNAME}
+    restart: always
     logging: *default-logging
     networks:
       - nodebb
     ports:
-      - "8086:4567"
+      - "172.17.0.1:8086:4567"
     environment:
       TZ: ${TZ:-America/New_York}
+      url: https://${BASE_HOST_NAME:-$HOSTNAME}
     volumes:
-      - ./volumes/data/nodebb:/data
-      - ./volumes/config/nodebb:/config
+      - ./volumes/data/nodebb:/usr/src/app/public/uploads
+      - ./volumes/config/nodebb:/usr/src/app/config
     depends_on:
-      - nodebb-db
+      db:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:4567"]
       interval: 30s
       timeout: 10s
       retries: 3
 
-  nodebb-db:
-    image: mongo:7
+  db:
+    image: mongo:latest
+    pull_policy: always
     container_name: nodebb-db
-    restart: unless-stopped
+    hostname: nodebb-db
+    restart: always
     logging: *default-logging
     networks:
       - nodebb
     environment:
       TZ: ${TZ:-America/New_York}
       MONGO_INITDB_DATABASE: ${DB_CREATE_DATABASE_NAME:-nodebb}
-      MONGO_INITDB_ROOT_USERNAME: ${DB_ADMIN_NAME:-root}
-      MONGO_INITDB_ROOT_PASSWORD: ${DB_ADMIN_PASS:-changeme_root_password}
+      MONGO_INITDB_ROOT_USERNAME: ${DB_ADMIN_NAME:-administrator}
+      MONGO_INITDB_ROOT_PASSWORD: ${DB_ADMIN_PASS:-changeme_admin_password}
     volumes:
       - ./volumes/data/db/mongodb/nodebb:/data/db
     healthcheck:
@@ -51,4 +58,5 @@ services:
 
 networks:
   nodebb:
+    name: nodebb
     external: false
