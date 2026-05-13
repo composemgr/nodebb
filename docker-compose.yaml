@@ -26,6 +26,12 @@ services:
       CONTAINER_NAME: nodebb-app
       HOSTNAME: ${BASE_HOST_NAME:-$HOSTNAME}
       url: https://${BASE_HOST_NAME:-$HOSTNAME}
+      DATABASE: mongo
+      DB_HOST: nodebb-db
+      DB_PORT: 27017
+      DB_NAME: ${DB_CREATE_DATABASE_NAME:-nodebb}
+      DB_USER: ${DB_ADMIN_NAME:-administrator}
+      DB_PASSWORD: ${DB_ADMIN_PASS:-changeme_admin_password}
     volumes:
       - ./volumes/data/nodebb:/usr/src/app/public/uploads
       - ./volumes/config/nodebb:/usr/src/app/config
