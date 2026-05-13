@@ -17,10 +17,14 @@ services:
     logging: *default-logging
     networks:
       - nodebb
+      - proxy
+      - cloudflare
     ports:
       - "172.17.0.1:8086:4567"
     environment:
       TZ: ${TZ:-America/New_York}
+      CONTAINER_NAME: nodebb-app
+      HOSTNAME: ${BASE_HOST_NAME:-$HOSTNAME}
       url: https://${BASE_HOST_NAME:-$HOSTNAME}
     volumes:
       - ./volumes/data/nodebb:/usr/src/app/public/uploads
@@ -33,6 +37,22 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+    labels:
+      - 'traefik.enable=true'
+      - 'cloudflare.enable=true'
+      - 'traefik.docker.network=proxy'
+      - 'cloudflare.service=http://nodebb-app:4567'
+      - 'cloudflare.hostname=nodebb.${CLOUDFLARE_ZONE_NAME:-}'
+      - 'traefik.http.routers.nodebb-app.entrypoints=http'
+      - 'traefik.http.routers.nodebb-app-secure.tls=true'
+      - 'traefik.http.routers.nodebb-app.rule=Host($(${BASE_HOST_NAME:-$HOSTNAME}))'
+      - 'traefik.http.middlewares.nodebb-app-https-redirect.redirectscheme.scheme=https'
+      - 'traefik.http.routers.nodebb-app.middlewares=nodebb-app-https-redirect'
+      - 'traefik.http.routers.nodebb-app-secure.entrypoints=https'
+      - 'traefik.http.routers.nodebb-app-secure.rule=Host($(${BASE_HOST_NAME:-$HOSTNAME}))'
+      - 'traefik.http.routers.nodebb-app-secure.tls.certresolver=cloudflare'
+      - 'traefik.http.routers.nodebb-app-secure.service=nodebb-app'
+      - 'traefik.http.services.nodebb-app.loadbalancer.server.port=4567'
 
   db:
     image: mongo:latest
@@ -45,6 +65,7 @@ services:
       - nodebb
     environment:
       TZ: ${TZ:-America/New_York}
+      CONTAINER_NAME: nodebb-db
       MONGO_INITDB_DATABASE: ${DB_CREATE_DATABASE_NAME:-nodebb}
       MONGO_INITDB_ROOT_USERNAME: ${DB_ADMIN_NAME:-administrator}
       MONGO_INITDB_ROOT_PASSWORD: ${DB_ADMIN_PASS:-changeme_admin_password}
@@ -60,3 +81,7 @@ networks:
   nodebb:
     name: nodebb
     external: false
+  proxy:
+    external: true
+  cloudflare:
+    external: true
