@@ -7,34 +7,30 @@ x-logging: &default-logging
 
 services:
   app:
-    image: nodebb/nodebb:latest
+    image: ghcr.io/nodebb/nodebb:4.16
     container_name: nodebb-app
     domainname: ${BASE_DOMAIN_NAME:-example.com}
     hostname: ${BASE_HOST_NAME:-$HOSTNAME}
     restart: always
     pull_policy: always
     logging: *default-logging
+    user: '0:0'
     environment:
       TZ: ${TZ:-America/New_York}
       CONTAINER_NAME: nodebb-app
       HOSTNAME: ${BASE_HOST_NAME:-$HOSTNAME}
-      # Database connection
-      url: https://${BASE_HOST_NAME:-$HOSTNAME}
-      DATABASE: mongo
-      DB_HOST: nodebb-db
-      DB_PORT: 27017
-      DB_NAME: ${DB_CREATE_DATABASE_NAME:-nodebb}
-      DB_USER: ${DB_USER_NAME:-nodebb}
-      DB_PASSWORD: ${DB_USER_PASS:-changeme_db_password}
-      REDIS_HOST: nodebb-redis
-      REDIS_PORT: 6379
+    healthcheck:
+      test: ['CMD', 'bash', '-c', 'exec 3<>/dev/tcp/127.0.0.1/4567']
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
     volumes:
-      - './volumes/data/nodebb:/usr/src/nodebb/data:z'
-      - './volumes/config/nodebb:/usr/src/nodebb/config:z'
+      - './volumes/data/nodebb/build:/usr/src/app/build:z'
+      - './volumes/data/nodebb/uploads:/usr/src/app/public/uploads:z'
+      - './volumes/config/nodebb:/opt/config:z'
     depends_on:
       db:
-        condition: service_started
-      redis:
         condition: service_started
     labels:
       - 'traefik.enable=true'
@@ -63,9 +59,6 @@ services:
     environment:
       TZ: ${TZ:-America/New_York}
       CONTAINER_NAME: nodebb-db
-      MONGO_INITDB_ROOT_USERNAME: ${DB_USER_NAME:-nodebb}
-      MONGO_INITDB_ROOT_PASSWORD: ${DB_USER_PASS:-changeme_db_password}
-      MONGO_INITDB_DATABASE: ${DB_CREATE_DATABASE_NAME:-nodebb}
     healthcheck:
       test: ['CMD', 'mongosh', '--quiet', '--eval', 'db.adminCommand(''ping'').ok']
       interval: 30s
@@ -77,27 +70,6 @@ services:
     networks:
       - nodebb
 
-  redis:
-    image: redis:alpine
-    container_name: nodebb-redis
-    domainname: ${BASE_DOMAIN_NAME:-example.com}
-    hostname: nodebb-redis
-    restart: always
-    pull_policy: always
-    logging: *default-logging
-    environment:
-      TZ: ${TZ:-America/New_York}
-      CONTAINER_NAME: nodebb-redis
-    healthcheck:
-      test: ['CMD-SHELL', 'redis-cli ping | grep -q PONG']
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 30s
-    volumes:
-      - './volumes/data/cache/redis/nodebb:/data:z'
-    networks:
-      - nodebb
 
 networks:
   nodebb:

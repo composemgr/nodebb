@@ -6,16 +6,15 @@ Real-time node.js based discussion platform
 
 NodeBB is a real-time discussion platform built on Node.js. It provides
 threaded topics, private messaging, and a plugin system, backed by MongoDB and
-Redis for sessions, caching, and pub/sub.
+Sessions and data are stored in MongoDB.
 
 ## 🚀 Services
 
-- **app**: nodebb/nodebb:latest
+- **app**: ghcr.io/nodebb/nodebb:4.16
 
 ### Infrastructure Components
 
 - **db**: mongo:latest - MongoDB database
-- **redis**: redis:alpine - Redis cache and pub/sub
 
 ## 📦 Installation
 
@@ -84,6 +83,8 @@ Three standalone compose files ship in this repo:
 docker compose -f docker-compose.traefik.yaml --env-file .env up -d
 ```
 
+NodeBB has no `latest` release tag (`latest` follows the unreleased master branch), so this stack pins the `4.16` release series. On first start NodeBB opens its web installer on the published port; choose MongoDB with host `nodebb-db`, port `27017`, database `nodebb`, and no username or password (the database is only reachable on the project network).
+
 ## 🌐 Access
 
 - **Web Interface**: http://172.17.0.1:64274
@@ -95,7 +96,6 @@ Complete the setup wizard on first visit to create the administrator account.
 - `./volumes/data/nodebb` - NodeBB data and file uploads
 - `./volumes/config/nodebb` - NodeBB configuration
 - `./volumes/data/db/mongo/nodebb` - MongoDB database data
-- `./volumes/data/cache/redis/nodebb` - Redis cache data
 
 ## 🔐 Security
 
