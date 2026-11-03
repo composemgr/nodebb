@@ -58,6 +58,12 @@ services:
       MONGO_INITDB_ROOT_USERNAME: ${DB_USER_NAME:-nodebb}
       MONGO_INITDB_ROOT_PASSWORD: ${DB_USER_PASS:-changeme_db_password}
       MONGO_INITDB_DATABASE: ${DB_CREATE_DATABASE_NAME:-nodebb}
+    healthcheck:
+      test: ['CMD', 'mongosh', '--quiet', '--eval', 'db.adminCommand(''ping'').ok']
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
     volumes:
       - './volumes/data/db/mongo/nodebb:/data/db:z'
     networks:
@@ -74,6 +80,12 @@ services:
     environment:
       TZ: ${TZ:-America/New_York}
       CONTAINER_NAME: nodebb-redis
+    healthcheck:
+      test: ['CMD-SHELL', 'redis-cli ping | grep -q PONG']
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
     volumes:
       - './volumes/data/cache/redis/nodebb:/data:z'
     networks:
